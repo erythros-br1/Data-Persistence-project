@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -11,8 +12,8 @@ public class ScoreManager : MonoBehaviour
 {
     class SaveData
     {
-        string Name;
-        int Score;
+        public string Name;
+        public int Score;
     }
 
     public static ScoreManager Instance;
@@ -24,9 +25,11 @@ public class ScoreManager : MonoBehaviour
     public int BestScore;
 
     public Text BestScoreText;
+    public InputField PlayerField;
 
     public void StartGame()
     {
+        PlayerName = PlayerField.text;
         SceneManager.LoadScene(1);
     }
 
@@ -41,12 +44,29 @@ public class ScoreManager : MonoBehaviour
 
     public void LoadBestScore()
     {
-        
+        string path = Application.persistentDataPath + "/savefile.json";
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            SaveData data = JsonUtility.FromJson<SaveData>(json);
+
+            BestScoreName = data.Name;
+            BestScore = data.Score;
+        }
     }
 
-    public void SaveBestScore()
+    public void SaveNewBestScore()
     {
+        if(PlayerScore > BestScore)
+        {
+            SaveData data = new SaveData();
+            data.Name = PlayerName;
+            data.Score = PlayerScore;
 
+            string json = JsonUtility.ToJson(data);
+
+            File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+        }
     }
 
     void Awake()
@@ -58,6 +78,9 @@ public class ScoreManager : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        LoadBestScore();
+        BestScoreText.text = BestScoreText.text = "Best Score: " + BestScoreName + ": " + BestScore;
     }
 
     // Update is called once per frame
